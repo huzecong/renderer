@@ -31,6 +31,7 @@ namespace kColor {
 	const Color Blue(1.0, 0.0, 0.0);
 	const Color White(1.0, 1.0, 1.0);
 	const Color Grey(0.5, 0.5, 0.5);
+	const Color Yellow(0.0, 0.8, 0.8);
 }
 const Vec3 Zero(0, 0, 0);
 const Vec3 One(1, 1, 1);
