@@ -23,8 +23,9 @@ int main() {
 	scene.addObject(new Plane({-3, 3, -3}, {6, 0, 0}, {0, 0, 6}, wall_material(kColor::White)));	// Top
 	scene.addObject(new Plane({-3, -3, 3}, {6, 0, 0}, {0, 0, -6}, wall_material(kColor::White)));	// Bottom
 
-	scene.addObject(new Sphere({-1.5, -3 + 1.25, -1}, 1.25, new MirrorMaterial(Zero, One * 0.9)));
-	scene.addObject(new Sphere({0.5, -3 + 1, 0.5}, 1, new DielectricMaterial(Zero, One * 0.95, One * 0.95, 1.5)));
+	scene.addObject(new Sphere({-1.25, -3 + 1.25, -1}, 1.25, new MirrorMaterial(Zero, One * 0.9)));
+	scene.addObject(new Sphere({0.65, -3 + 1, 1.5}, 1, new DielectricMaterial(Zero, One * 0.95, One * 0.95, 1.5)));
+	scene.addObject(new Sphere({1.95, -3 + 1, -2}, 1, kMaterial::kPlastic(kColor::Grey)));
 
 	scene.addLight(new AreaLight({-1.5, 3 - (float)kEps, -1.5}, {3, 0, 0}, {0, 0, 3}, One * 45));
 	scene.addObject(new Plane({-1.5, 3 - (float)kEps / 2, -1.5}, {3, 0, 0}, {0, 0, 3}, new Material(One * 15)));	// Left

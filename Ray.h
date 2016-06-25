@@ -38,10 +38,10 @@ inline bool refract(const Vec3 &I, const Vec3 &_N, const double &ior,
 	assert(is_normalized(_N));
 	double cosI = I.dot(_N);
 	assert(-1 <= cosI && cosI <= 1);
-	bool inside = cosI < 0;
+	bool into = cosI < 0;
 	double eta = ior;
-	Vec3 N = inside ? _N : -_N;
-	if (inside) {
+	Vec3 N = into ? _N : -_N;
+	if (into) {
 		cosI = -cosI;
 		eta = 1.0 / ior;
 	}
@@ -50,15 +50,15 @@ inline bool refract(const Vec3 &I, const Vec3 &_N, const double &ior,
 	refract_ray = eta * I + (eta * cosI - sqrt(k)) * N;
 	assert(is_normalized(refract_ray));
 
-	Vec3 _r = refract_ray.cross(N), _i = I.cross(N);
-	double lr = sqrt(_r.dot(_r)), li = sqrt(_i.dot(_i));
-	assert(fabs(lr / li - eta) < kEps);
+//	Vec3 _r = refract_ray.cross(N), _i = I.cross(N);
+//	double lr = sqrt(_r.dot(_r)), li = sqrt(_i.dot(_i));
+//	assert(fabs(lr / li - eta) < kEps);
 
 	double r0 = sqr((ior - 1) / (ior + 1));
-	if (inside) {
+	if (into) {
 		cosI = 1 - cosI;
 	} else {
-		cosI = refract_ray.dot(_N);
+		cosI = 1 - refract_ray.dot(_N);
 	}
 	assert(0 <= cosI && cosI <= 1);
 	schlick = r0 + (1 - r0) * cosI * cosI * cosI * cosI * cosI;
