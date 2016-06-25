@@ -11,11 +11,27 @@
 #include "Scene.h"
 #include <functional>
 
+enum MaterialType {
+	MTBase,
+	MTMirror,
+	MTDielectric,
+	MTDiffuse,
+	MTGlossy
+};
+
 class Material {
 protected:
+	MaterialType m_type;
 	Color kEmissive;
 public:
-	Material(const Color &emissive) : kEmissive(emissive) { }
+	Material(const Color &emissive)
+			: kEmissive(emissive) {
+		m_type = MTBase;
+	}
+
+	inline const MaterialType type() const {
+		return m_type;
+	}
 
 	inline const Color &emissiveColor() const {
 		return kEmissive;
@@ -33,7 +49,9 @@ protected:
 						   int depth, const Scene &scene) const;
 public:
 	MirrorMaterial(const Color &emissive, const Color &reflect)
-			: Material(emissive), kReflect(reflect) { }
+			: Material(emissive), kReflect(reflect) {
+		m_type = MTMirror;
+	}
 
 	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
 						 int depth, const Scene &scene) const;
@@ -46,14 +64,23 @@ protected:
 	Color kDiffuse;
 	Color kSpecular;
 	double exp_phong;    // exponent in Phong model
+
 	// Direct lighting with Phong model
 	Color directIllumination(const Ray &ray, const IntersectData &hit_data,
 							 const Scene &scene) const;
+	// Importance sampling
+	Vec3 sampleUpperHemisphere(const Vec3 &normal,
+							   const double &exponent) const;
+	// Indirect lighting through diffuse
+	Color indirectDiffuse(const Ray &ray, const IntersectData &hit_data,
+						  int depth, const Scene &scene) const;
 public:
 	DiffuseMaterial(const Color &emissive, const Color &diffuse,
 					const Color &specular, const double &_exp_phong)
 			: Material(emissive), kDiffuse(diffuse), kSpecular(specular),
-			  exp_phong(_exp_phong) { }
+			  exp_phong(_exp_phong) {
+		m_type = MTDiffuse;
+	}
 
 	virtual Color calculateColor(const Ray &ray, const IntersectData &hit_data,
 								 int depth, const Scene &scene) const;
@@ -67,7 +94,9 @@ public:
 				   const Color &specular, const Color &reflect,
 				   const double &_exp_phong)
 			: DiffuseMaterial(emissive, diffuse, specular, _exp_phong),
-			  kReflect(reflect) { }
+			  kReflect(reflect) {
+		m_type = MTGlossy;
+	}
 
 	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
 						 int depth, const Scene &scene) const;
@@ -80,8 +109,9 @@ protected:
 public:
 	DielectricMaterial(const Color &emissive, const Color &reflect,
 					   const Color &refract, const double &_ior)
-			: MirrorMaterial(emissive, reflect),
-			  kRefract(refract), ior(_ior) { }
+			: MirrorMaterial(emissive, reflect), kRefract(refract), ior(_ior) {
+		m_type = MTDielectric;
+	}
 
 	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
 						 int depth, const Scene &scene) const;

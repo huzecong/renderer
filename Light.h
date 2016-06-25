@@ -14,7 +14,7 @@ public:
 	Light(const Color &_color) : col(_color) { }
 
 	inline Color color(const double &dist) const {
-		return col / 100;
+		return col / sqr(dist);
 	}
 
 	virtual Point sample() = 0;

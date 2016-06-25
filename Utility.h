@@ -27,14 +27,6 @@ public:
 		static std::uniform_real_distribution<> dis(0, 1);
 		return dis(generator());
 	}
-
-	static inline Vec3 upper_hemisphere() {
-		typedef Vec3::value_type T;
-		T x = (T)uniform_pm1();
-		T y = (T)uniform_pm1();
-		T z = (T)uniform_01();
-		return cv::normalize(Vec3(x, y, z));
-	}
 };
 
 template <class T>

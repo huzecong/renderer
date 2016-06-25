@@ -11,7 +11,6 @@ typedef unsigned int uint;
 
 // Shorthands
 typedef cv::Vec3f Vec3;
-using cv::Vec4f;
 using cv::Mat;
 
 // Aliases
@@ -19,9 +18,11 @@ typedef Vec3 Point;
 typedef Vec3 Color;
 
 // Constants
-const int kIters = 10;
+const int kIters = 100;
+const int kThreads = 8;
+const int kSamplesPerIter = 50;
 const double kEps = 1e-4;
-const int kMaxDepth = 3;
+const int kMaxDepth = 8;
 
 namespace kColor {
 	const Color Black(0.0, 0.0, 0.0);

@@ -21,6 +21,9 @@ class Scene {
 	Point m_camera, m_lookat;
 	double m_field_length;
 
+	Vec3 m_viewport_x, m_viewport_y;
+	double m_viewport_unit;
+
 public:
 	Scene(int _width, int _height) : m_canvas(_width, _height) { }
 
@@ -40,6 +43,8 @@ public:
 		m_canvas.show();
 	}
 
+	bool castShadowRay(const Ray &ray, IntersectData *data) const;
+
 	bool findIntersection(const Ray &ray, IntersectData *data) const;
 
 	inline void setView(const Point &camera, const Point &lookat,
@@ -51,7 +56,9 @@ public:
 
 	Color trace(const Ray &ray, int depth) const;
 
-	void render();
+	void render_threaded(int pid, int iteration, struct PixelQueue *pixel_queue);
+
+	void render(bool multithread);
 };
 
 

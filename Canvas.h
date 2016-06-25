@@ -10,10 +10,13 @@
 #include <chrono>
 #include <iostream>
 #include <mutex>
+#include <string>
 
 class Canvas {
 	int m_width, m_height;
 	Mat canvas;
+
+	std::mutex m_mutex;
 /*
 	std::thread *m_thread;
 	bool window_should_open;
@@ -70,8 +73,25 @@ public:
 		}
 	}
 */
+	inline void clear() {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		canvas = Mat::zeros(m_height, m_width, CV_32FC3);
+	}
+
+	inline void save(char *path) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		cv::Mat output;
+		canvas.convertTo(output, CV_16UC3, 65536);
+		cv::imwrite(path, output);
+	}
+
+	inline Vec3 getColor(int x, int y) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		return canvas.at<Vec3>(x, y);
+	}
+
 	inline void setColor(int x, int y, const Vec3 &col) {
-//		std::lock_guard<std::mutex> lock(m_mutex);
+		std::lock_guard<std::mutex> lock(m_mutex);
 		canvas.at<Vec3>(x, y) = col;
 	}
 };
