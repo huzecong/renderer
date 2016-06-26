@@ -27,6 +27,12 @@ public:
 		static std::uniform_real_distribution<> dis(0, 1);
 		return dis(generator());
 	}
+
+	static inline Vec3 vector() {
+		return Vec3{(float)Random::uniform_01(),
+					(float)Random::uniform_01(),
+					(float)Random::uniform_01()};
+	}
 };
 
 template <class T>

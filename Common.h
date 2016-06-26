@@ -25,11 +25,11 @@ const double kEps = 1e-4;
 const int kMaxDepth = 8;
 
 namespace kColor {
-	const Color Black(0.0, 0.0, 0.0);
-	const Color Red(0.0, 0.0, 1.0);
-	const Color Green(0.0, 1.0, 0.0);
-	const Color Blue(1.0, 0.0, 0.0);
-	const Color White(1.0, 1.0, 1.0);
+	const Color Black(0, 0, 0);
+	const Color Red(0, 0, 1);
+	const Color Green(0, 1, 0);
+	const Color Blue(1, 0, 0);
+	const Color White(1, 1, 1);
 	const Color Grey(0.5, 0.5, 0.5);
 	const Color Yellow(0.0, 0.8, 0.8);
 }
