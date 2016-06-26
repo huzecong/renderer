@@ -91,9 +91,9 @@ public:
 
 	inline Color colorAt(const Point &point) const {
 		Point bias_normal = cv::normalize(base_rotation * (point - center));
-		double u = atan2(bias_normal.val[2], bias_normal.val[0]) / (2 * M_PI) +
+		double u = atan2(-bias_normal.val[2], bias_normal.val[0]) / (2 * M_PI) +
 				   0.5;
-		double v = asin(bias_normal.val[1]) / M_PI + 0.5;
+		double v = asin(-bias_normal.val[1]) / M_PI + 0.5;
 		int r = (int)floor(v * texture.rows), c = (int)floor(u * texture.cols);
 		if (r == texture.rows) --r;
 		if (c == texture.cols) --c;

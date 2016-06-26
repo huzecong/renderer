@@ -7,25 +7,33 @@
 
 #include "Common.h"
 #include <random>
+#include <ctime>
+#include <thread>
 
 // Utility functions
 
 class Random {
-	static inline std::mt19937 &generator() {
-		static std::random_device rd;
-		static std::mt19937 generator(rd());
-		return generator;
-	}
-
 public:
 	static inline double uniform_pm1() {
-		static std::uniform_real_distribution<> dis(-1, 1);
-		return dis(generator());
+#ifdef __APPLE__
+		static std::mt19937 *generator = nullptr;
+#else
+		static thread_local std::mt19937 *generator = nullptr;
+#endif
+		if (!generator) generator = new std::mt19937(clock() + std::hash<std::thread::id>()(std::this_thread::get_id()));
+		std::uniform_real_distribution<> dis(-1, 1);
+		return dis(*generator);
 	}
 
 	static inline double uniform_01() {
-		static std::uniform_real_distribution<> dis(0, 1);
-		return dis(generator());
+#ifdef __APPLE__
+		static std::mt19937 *generator = nullptr;
+#else
+		static thread_local std::mt19937 *generator = nullptr;
+#endif
+		if (!generator) generator = new std::mt19937(clock() + std::hash<std::thread::id>()(std::this_thread::get_id()));
+		std::uniform_real_distribution<> dis(0, 1);
+		return dis(*generator);
 	}
 
 	static inline Vec3 vector() {
@@ -45,15 +53,13 @@ inline T sqr(const T &x) {
 	return x * x;
 }
 
-inline double distsqr(const Point &a, const Point &b) {
-	double ret = sqr(a.val[0] - b.val[0]) +
-				 sqr(a.val[1] - b.val[1]) +
-				 sqr(a.val[2] - b.val[2]);
+inline double length2(const Vec3 &a) {
+	double ret = sqr(a.val[0]) + sqr(a.val[1]) + sqr(a.val[2]);
 	return ret;
 }
 
-inline double dist(const Point &a, const Point &b) {
-	double ret = distsqr(a, b);
+inline double length(const Vec3 &a) {
+	double ret = length2(a);
 	return sqrt(ret);
 }
 
@@ -62,6 +68,10 @@ inline bool roulette(const double &a, const double &b) {
 	double p = a / (a + b);
 	double x = Random::uniform_01();
 	return x <= p;
+}
+
+inline Vec3::value_type max(const Vec3 &a) {
+	return std::max(a.val[0], std::max(a.val[1], a.val[2]));
 }
 
 #endif //RENDERER_UTILITY_H

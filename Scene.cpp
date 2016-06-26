@@ -117,18 +117,11 @@ void Scene::render(bool multithread) {
 						(j - m_canvas.width() / 2) * m_viewport_unit;
 				Color col;
 
-				if (i == 422 && j == 356) {
-					int a = 0;
-					++a;
-				}
-
 				for (int k = 0; k < kSamplesPerIter; ++k) {
-					double vb = ver_bias +
-								Random::uniform_pm1() * m_viewport_unit /
-								2;
-					double hb = hor_bias +
-								Random::uniform_pm1() * m_viewport_unit /
-								2;
+					double vb = ver_bias;
+//								+ Random::uniform_pm1() * m_viewport_unit / 2;
+					double hb = hor_bias;
+//								+ Random::uniform_pm1() * m_viewport_unit / 2;
 					Vec3 target =
 							m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 					Ray ray(target, target - m_camera);

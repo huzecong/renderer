@@ -12,11 +12,75 @@
 #include <functional>
 
 class Material {
-public:
-	Material() { }
+	Color kEmissive;
+	Color kDiffuse, bDiffuse;    // diffuse_coef = kDiffuse .* color + bDiffuse
+	Color kSpecular, bSpecular;    // specular_coef = kSpecular .* color + bSpecular
+	double exp_phong;
+	Color kReflect;
+	Color kRefract;
+	double kIor;
+	double kS, kD;
 
-	inline virtual const bool passesLight() const {
-		return false;
+	Color mirrorReflection(const Ray &ray, const IntersectData &hit_data,
+						   int depth, const Scene &scene) const;
+
+	// Direct lighting with Phong model
+	Color directIllumination(const Ray &ray,
+							 const IntersectData &hit_data,
+							 const Scene &scene) const;
+	// Importance sampling
+	Vec3 sampleUpperHemisphere(const Vec3 &normal,
+							   const double &exponent) const;
+	// Indirect lighting through diffuse
+	Color indirectDiffuse(const Ray &ray, const IntersectData &hit_data,
+						  int depth, const Scene &scene) const;
+	// Indirect lighting through diffuse
+	Color indirectSpecular(const Ray &ray, const IntersectData &hit_data,
+						   int depth, const Scene &scene) const;
+
+public:
+	Material() {
+		exp_phong = 1;
+	}
+
+	inline Material &setEmissive(const Color &emissive) {
+		kEmissive = emissive;
+		return *this;
+	}
+
+	inline Material &setDiffuse(const Color &diffuse, const Color &diffuse_bias) {
+		kDiffuse = diffuse;
+		bDiffuse = diffuse_bias;
+		kD = std::max(std::max(kDiffuse.val[0], kDiffuse.val[1]),
+					  kDiffuse.val[2]);
+		return *this;
+	}
+
+	inline Material &setSpecular(const Color &specular, const Color &specular_bias,
+							const double &exponent) {
+		kSpecular = specular;
+		bSpecular = specular_bias;
+		exp_phong = exponent;
+		kS = std::max(std::max(kSpecular.val[0], kSpecular.val[1]),
+					  kSpecular.val[2]);
+		return *this;
+	}
+
+	inline Material &setReflect(const Color &reflect) {
+		kReflect = reflect;
+		return *this;
+	}
+
+	inline Material &setRefract(const Color &reflect, const Color &refract,
+						   const double &ior) {
+		kReflect = reflect;
+		kRefract = refract;
+		kIor = ior;
+		return *this;
+	}
+
+	inline const bool passesLight() const {
+		return length2(kRefract) > 0;
 	}
 
 	inline Color colorAt(const Ray &ray,
@@ -26,112 +90,43 @@ public:
 		return color;
 	}
 
-	virtual Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-								 int depth, const Scene &scene) const = 0;
-};
-
-class EmissiveMaterial : public Material {
-protected:
-	Color kEmissive;
-public:
-	EmissiveMaterial(const Color &emissive) : kEmissive(emissive) { }
-
-	virtual Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-								 int depth, const Scene &scene) const;
-};
-
-class MirrorMaterial : public Material {
-protected:
-	Color kReflect;
-
-	Color mirrorReflection(const Ray &ray, const IntersectData &hit_data,
-						   int depth, const Scene &scene) const;
-public:
-	MirrorMaterial(const Color &reflect) : kReflect(reflect) { }
-
-	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
+	Color calculateColor(const Ray &ray,
+						 const IntersectData &hit_data,
 						 int depth, const Scene &scene) const;
 };
 
-// Materials using Phong model
 
-class DiffuseMaterial : public Material {
-protected:
-	Color kDiffuse, bDiffuse;        // diffuse_coef = kDiffuse .* color + bDiffuse
-	double exp_phong;    // exponent in Phong model
+inline Material *DiffuseMaterial(const Color &linear, const Color &bias) {
+	Material *ret = new Material();
+	ret->setDiffuse(linear, bias);
+	return ret;
+}
 
-	// Direct lighting with Phong model
-	virtual Color directIllumination(const Ray &ray,
-									 const IntersectData &hit_data,
-									 const Scene &scene) const;
-	// Importance sampling
-	Vec3 sampleUpperHemisphere(const Vec3 &normal,
-							   const double &exponent) const;
-	// Indirect lighting through diffuse
-	Color indirectDiffuse(const Ray &ray, const IntersectData &hit_data,
-						  int depth, const Scene &scene) const;
-public:
-	DiffuseMaterial(const Color &diffuse, const Color &diffuse_bias)
-			: kDiffuse(diffuse), bDiffuse(diffuse_bias) { }
+inline Material *MirrorMaterial(const Color &reflect) {
+	Material *ret = new Material();
+	ret->setReflect(reflect);
+	return ret;
+}
 
-	virtual Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-								 int depth, const Scene &scene) const;
-};
+inline Material *DielectricMaterial(const Color &reflect, const Color &refract,
+									const double &ior) {
+	Material *ret = new Material();
+	ret->setRefract(reflect, refract, ior);
+	return ret;
+}
 
-class MetallicMaterial : public DiffuseMaterial {
-protected:
-	Color kSpecular, bSpecular;
-	double exp_phong;
-	double kD, kS;
+inline Material *MetallicMaterial(const Color &diffuse, const Color &diffuse_bias,
+								  const Color &specular, const Color &specular_bias,
+								  const double &exponent) {
+	Material *ret = DiffuseMaterial(diffuse, diffuse_bias);
+	ret->setSpecular(specular, specular_bias, exponent);
+	return ret;
+}
 
-	// Direct lighting with Phong model
-	virtual Color directIllumination(const Ray &ray,
-									 const IntersectData &hit_data,
-									 const Scene &scene) const;
-
-	// Indirect lighting through specular reflection
-	Color indirectSpecular(const Ray &ray, const IntersectData &hit_data,
-						   int depth, const Scene &scene) const;
-public:
-	MetallicMaterial(const Color &diffuse, const Color &diffuse_bias,
-					 const Color &specular, const Color &specular_bias,
-					 const double &_exp_phong)
-			: DiffuseMaterial(diffuse, diffuse_bias),
-			  kSpecular(specular), bSpecular(specular_bias),
-			  exp_phong(_exp_phong) {
-		kD = std::max(std::max(kDiffuse.val[0], kDiffuse.val[1]),
-					  kDiffuse.val[2]);
-		kS = std::max(std::max(kSpecular.val[0], kSpecular.val[1]),
-					  kSpecular.val[2]);
-	}
-
-	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-						 int depth, const Scene &scene) const;
-};
-
-class GlossyMaterial : public MirrorMaterial {
-public:
-	GlossyMaterial(const Color &reflect) : MirrorMaterial(reflect) { }
-
-	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-						 int depth, const Scene &scene) const;
-};
-
-class DielectricMaterial : public MirrorMaterial {
-protected:
-	Color kRefract;
-	double ior;        // index of refraction
-public:
-	DielectricMaterial(const Color &reflect, const Color &refract,
-					   const double &_ior)
-			: MirrorMaterial(reflect), kRefract(refract), ior(_ior) { }
-
-	inline virtual const bool passesLight() const {
-		return true;
-	}
-
-	Color calculateColor(const Ray &ray, const IntersectData &hit_data,
-						 int depth, const Scene &scene) const;
-};
+inline Material *EmissiveMaterial(const Color &emissive) {
+	Material *ret = new Material();
+	ret->setEmissive(emissive);
+	return ret;
+}
 
 #endif //RENDERER_MATERIAL_H

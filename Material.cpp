@@ -6,39 +6,12 @@
 
 using namespace std;
 
-Color DiffuseMaterial::directIllumination(const Ray &ray,
-										  const IntersectData &hit_data,
-										  const Scene &scene) const {
-	Color color;
-	double light_dist = ray.dist + hit_data.dist;
-	for (auto light : scene.lights()) {
-		Point light_pos = light->sample();
-		Point hit_point = ray.o + ray.v * (hit_data.dist - kEps);
-		Vec3 shadow_ray_v = light_pos - hit_point;
-		Ray shadow_ray(hit_point, shadow_ray_v);
-		double shadow_ray_length2 = shadow_ray_v.dot(shadow_ray_v);
-
-		Vec3 light_col = light->color(light_dist + sqrt(shadow_ray_length2));
-
-		IntersectData shadow_data;
-		if (!scene.castShadowRay(shadow_ray, &shadow_data) ||
-			sqr(shadow_data.dist) > shadow_ray_length2) {
-			// Diffuse color
-			const Vec3 &N = hit_data.surface_normal;
-			const Vec3 &L = shadow_ray.v;
-			Color diffuse_coef = (kDiffuse.mul(colorAt(ray, hit_data)) + bDiffuse);
-			color += diffuse_coef.mul(max((Vec3::value_type)0.0, N.dot(L)) * light_col);
-		}
-	}
-	return color;
-}
-
-Vec3 DiffuseMaterial::sampleUpperHemisphere(const Vec3 &normal,
-											const double &exponent) const {
+Vec3 Material::sampleUpperHemisphere(const Vec3 &normal,
+									 const double &exponent) const {
 	double r = Random::uniform_01();
 	double phi = Random::uniform_01() * 2 * M_PI;
-	double theta = exponent == 1 ? acos(sqrt(r)) :		// Uniform
-				   acos(pow(r, 1 / (exponent + 1)));	// Importance
+	double theta = exponent == 1 ? acos(sqrt(r)) :        // Uniform
+				   acos(pow(r, 1 / (exponent + 1)));    // Importance
 
 	double stheta = sin(theta);
 	double x_coef = stheta * cos(phi), y_coef = stheta * sin(phi);
@@ -51,9 +24,9 @@ Vec3 DiffuseMaterial::sampleUpperHemisphere(const Vec3 &normal,
 	return x_axis * x_coef + y_axis * y_coef + r * normal;
 }
 
-Color DiffuseMaterial::indirectDiffuse(const Ray &ray,
-									   const IntersectData &hit_data,
-									   int depth, const Scene &scene) const {
+Color Material::indirectDiffuse(const Ray &ray,
+								const IntersectData &hit_data,
+								int depth, const Scene &scene) const {
 	Point hit_point = ray.o + ray.v * (hit_data.dist - kEps);
 	Vec3 next_dir = sampleUpperHemisphere(hit_data.surface_normal, 1);
 	Ray next_ray(hit_point, next_dir);
@@ -62,31 +35,9 @@ Color DiffuseMaterial::indirectDiffuse(const Ray &ray,
 	return (kDiffuse.mul(colorAt(ray, hit_data)) + bDiffuse).mul(color);
 }
 
-Color DiffuseMaterial::calculateColor(const Ray &ray,
-									  const IntersectData &hit_data,
-									  int depth, const Scene &scene) const {
-	Color color;
-//	color += directIllumination(ray, hit_data, scene);
-	color += indirectDiffuse(ray, hit_data, depth, scene);
-	return color;
-}
-
-
-Color MetallicMaterial::calculateColor(const Ray &ray,
-									 const IntersectData &hit_data,
-									 int depth, const Scene &scene) const {
-	Color color;
-	if (roulette(kD, kS)) {
-		color += indirectDiffuse(ray, hit_data, depth, scene);
-	} else {
-		color += indirectSpecular(ray, hit_data, depth, scene);
-	}
-	return color;
-}
-
-Color MetallicMaterial::indirectSpecular(const Ray &ray,
-									   const IntersectData &hit_data, int depth,
-									   const Scene &scene) const {
+Color Material::indirectSpecular(const Ray &ray,
+								 const IntersectData &hit_data, int depth,
+								 const Scene &scene) const {
 	Vec3 reflect_ray = reflect(ray.v, hit_data.surface_normal);
 	Vec3 next_dir = sampleUpperHemisphere(reflect_ray, exp_phong);
 	if (next_dir.dot(hit_data.surface_normal) < 0) return kColor::Black;
@@ -97,9 +48,9 @@ Color MetallicMaterial::indirectSpecular(const Ray &ray,
 	return (kSpecular.mul(colorAt(ray, hit_data)) + bSpecular).mul(color);
 }
 
-Color MetallicMaterial::directIllumination(const Ray &ray,
-										   const IntersectData &hit_data,
-										   const Scene &scene) const {
+Color Material::directIllumination(const Ray &ray,
+								   const IntersectData &hit_data,
+								   const Scene &scene) const {
 	Color color;
 	double light_dist = ray.dist + hit_data.dist;
 	for (auto light : scene.lights()) {
@@ -117,22 +68,26 @@ Color MetallicMaterial::directIllumination(const Ray &ray,
 			// Diffuse color
 			const Vec3 &N = hit_data.surface_normal;
 			const Vec3 &L = shadow_ray.v;
-			Color diffuse_coef = (kDiffuse.mul(colorAt(ray, hit_data)) + bDiffuse);
-			color += diffuse_coef.mul(max((Vec3::value_type)0.0, N.dot(L)) * light_col);
+			Color diffuse_coef = (kDiffuse.mul(colorAt(ray, hit_data)) +
+								  bDiffuse);
+			color += diffuse_coef.mul(
+					max((Vec3::value_type)0.0, N.dot(L)) * light_col);
 
 			// Specular color (using Blinn-Phong model)
 			Vec3 H = cv::normalize(shadow_ray.v - ray.v);
-			Color specular_coef = (kSpecular.mul(colorAt(ray, hit_data)) + bSpecular);
+			Color specular_coef = (kSpecular.mul(colorAt(ray, hit_data)) +
+								   bSpecular);
 			color += specular_coef.mul(
-					pow(max((Vec3::value_type)0.0, N.dot(H)), exp_phong) * light_col);
+					pow(max((Vec3::value_type)0.0, N.dot(H)), exp_phong) *
+					light_col);
 		}
 	}
 	return color;
 }
 
 
-Color MirrorMaterial::mirrorReflection(const Ray &ray, const IntersectData &hit_data,
-									   int depth, const Scene &scene) const {
+Color Material::mirrorReflection(const Ray &ray, const IntersectData &hit_data,
+								 int depth, const Scene &scene) const {
 	Point hit_point = ray.o + ray.v * (hit_data.dist - kEps);
 	Ray next_ray(hit_point, reflect(ray.v, hit_data.surface_normal));
 	next_ray.dist = ray.dist + hit_data.dist;
@@ -140,49 +95,54 @@ Color MirrorMaterial::mirrorReflection(const Ray &ray, const IntersectData &hit_
 	return kReflect.mul(color);
 }
 
-Color MirrorMaterial::calculateColor(const Ray &ray,
-									 const IntersectData &hit_data,
-									 int depth, const Scene &scene) const {
-	return mirrorReflection(ray, hit_data, depth, scene);
-}
+Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
+							   int depth, const Scene &scene) const {
+	if (kEmissive != Zero) return kEmissive.mul(colorAt(ray, hit_data));
 
-Color GlossyMaterial::calculateColor(const Ray &ray,
-									 const IntersectData &hit_data, int depth,
-									 const Scene &scene) const {
-	Color color = colorAt(ray, hit_data);
-	color += mirrorReflection(ray, hit_data, depth, scene);
-	return color;
-}
 
-Color DielectricMaterial::calculateColor(const Ray &ray,
-										 const IntersectData &hit_data,
-										 int depth, const Scene &scene) const {
-	Color color = colorAt(ray, hit_data);
 	Vec3 refract_ray;
-	double ior = dynamic_cast<const DielectricMaterial *>(
-			hit_data.hit_obj->material())->ior;
 	double schlick;
-	bool should_refract = refract(ray.v, hit_data.surface_normal, ior,
-								  refract_ray, schlick);
-	if (!should_refract) {
-		color += mirrorReflection(ray, hit_data, depth, scene);
-	} else {
-		if (roulette(1 - schlick, schlick)) {
-			// Refract
-			Point hit_point = ray.o + ray.v * (hit_data.dist + kEps);
-			Ray next_ray(hit_point, refract_ray);
-			next_ray.dist = ray.dist + hit_data.dist;
-			color += kRefract.mul(scene.trace(next_ray, depth + 1));
-		} else {
-			// Reflect
-			color += mirrorReflection(ray, hit_data, depth, scene);
-		}
+	bool should_refract;
+
+	double kR = 0.0;
+	if (kReflect != Zero && kRefract != Zero) {
+		should_refract = refract(ray.v, hit_data.surface_normal, kIor,
+								 refract_ray, schlick);
+		kR = max((1 - schlick) * kRefract + schlick * kReflect);
+	} else if (kReflect != Zero) {
+		should_refract = false;
+		kR = max(kReflect);
 	}
+
+	Color color;
+	double sum = kD + kS + kR;
+	double prob = Random::uniform_01() * sum;
+	if (prob <= kD) {
+		// Diffuse
+		color = sum / kD * indirectDiffuse(ray, hit_data, depth, scene);
+	} else if (prob <= kD + kS) {
+		// Specular
+		color = sum / kS * indirectSpecular(ray, hit_data, depth, scene);
+	} else {
+		// Reflect and Refract
+		Color re;
+		if (!should_refract) {
+			re = mirrorReflection(ray, hit_data, depth, scene);
+		} else {
+			if (roulette(1 - schlick, schlick)) {
+				// Refract
+				Point hit_point = ray.o + ray.v * (hit_data.dist + kEps);
+				Ray next_ray(hit_point, refract_ray);
+				next_ray.dist = ray.dist + hit_data.dist;
+				re = kRefract.mul(scene.trace(next_ray, depth + 1));
+			} else {
+				// Reflect
+				re = mirrorReflection(ray, hit_data, depth, scene);
+			}
+		}
+		color = sum / kR * re;
+	}
+
 	return color;
 }
 
-Color EmissiveMaterial::calculateColor(const Ray &ray,
-									   const IntersectData &hit_data, int depth,
-									   const Scene &scene) const {
-	return kEmissive.mul(colorAt(ray, hit_data));
-}
