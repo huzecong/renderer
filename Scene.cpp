@@ -49,10 +49,10 @@ void Scene::render_threaded(int pid, int iteration, PixelQueue *pixel_queue) {
 		Color col;
 
 		for (int k = 0; k < kSamplesPerIter; ++k) {
-			double vb = ver_bias;
-//						+ Random::uniform_pm1() * m_viewport_unit / 2;
-			double hb = hor_bias;
-//						+ Random::uniform_pm1() * m_viewport_unit / 2;
+			double vb = ver_bias
+						+ Random::uniform_pm1() * m_viewport_unit / 2;
+			double hb = hor_bias
+						+ Random::uniform_pm1() * m_viewport_unit / 2;
 			Vec3 target = m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 			Ray ray(target, target - m_camera);
 			col += trace(ray, 0);
@@ -138,7 +138,7 @@ Color Scene::trace(const Ray &ray, int depth) const {
 	if (depth > kMaxDepth) return kColor::Black;
 	IntersectData data;
 	if (!findIntersection(ray, &data)) {
-		return kBackgroundColor;
+		return environmentColor(ray);
 	}
 
 //	return hit_obj->material()->emissiveColor();
@@ -178,4 +178,82 @@ bool Scene::findIntersection(const Ray &ray, IntersectData *data) const {
 		if (data != nullptr) *data = best;
 		return true;
 	}
+}
+
+Color Scene::environmentColor(const Ray &ray) const {
+	if (!m_has_environment) return kBackgroundColor;
+
+	static Vec3 normal = {0.001, 0.001, 0.001};
+	static Vec3 aux = Random::vector();
+	static Vec3 x_axis = normal.cross(aux);
+	static Vec3 y_axis = normal.cross(x_axis);
+	static cv::Matx<float, 3, 3> rot{
+			x_axis.val[0], y_axis.val[0], normal.val[0],
+			x_axis.val[1], y_axis.val[1], normal.val[1],
+			x_axis.val[2], y_axis.val[2], normal.val[2]
+	};
+
+//	Vec3 dir = rot * ray.v;
+	Vec3 dir = ray.v;
+
+	while (sqr(dir.val[0]) + sqr(dir.val[1]) < kEps)
+		dir = cv::normalize(rot * ray.v);
+	double r = 0.159154943 * acos(dir.val[2]) /
+			   sqrt(sqr(dir.val[0]) + sqr(dir.val[1]));
+	double u = 0.5 + dir.val[0] * r;
+	double v = 0.5 + dir.val[1] * r;
+
+	// Now get the radiance out of the HDR map
+	int col = (int)(u * m_environment.cols);
+	int row = (int)((1 - v) * m_environment.rows);
+	return m_environment.at<cv::Vec3f>(row, col);
+
+	/*
+	double u = atan2(-ray.v.val[2], ray.v.val[0]) / (2 * M_PI) +
+			   0.5;
+	double v = asin(-ray.v.val[1]) / M_PI + 0.5;
+	int r = (int)floor(v * m_environment.rows),
+		c = (int)floor(u * m_environment.cols);
+	if (r == m_environment.rows) --r;
+	if (c == m_environment.cols) --c;
+	return m_environment.at<Color>(r, c);
+	 */
+}
+
+void Scene::loadEnvironment(char *path) {
+	char strPF[3];
+	unsigned int SizeX;
+	unsigned int SizeY;
+	int dummyC;
+
+	FILE *file = fopen(path, "rb");
+
+	if (file == NULL) {
+		printf("PFM-File not found!\n");
+		return;
+	}
+
+	fscanf(file, "%s\n%u %u\n", strPF, &SizeX, &SizeY);
+	dummyC = fgetc(file);
+	fscanf(file, "\n%*f\n");
+
+	m_environment = Mat(SizeY, SizeX, CV_32FC3);
+
+	size_t result;
+	size_t lSize = SizeX * 3;
+	float *data = new float[lSize];
+	for (int y = SizeY - 1; y >= 0; --y) {
+		result = fread(data, sizeof(float), lSize, file);
+		if (result != lSize) {
+			printf("Error reading PFM-File. %d Bytes read.\n", (int)result);
+		}
+		for (int x = 0; x < SizeX; ++x) {
+			int p = (SizeX - x - 1) * 3;
+			m_environment.at<cv::Vec3f>(y, x) = cv::Vec3f{data[p + 2], data[p + 1],
+														  data[p]};
+		}
+	}
+
+	fclose(file);
+	m_has_environment = true;
 }

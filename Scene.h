@@ -24,8 +24,13 @@ class Scene {
 	Vec3 m_viewport_x, m_viewport_y;
 	double m_viewport_unit;
 
+	Mat m_environment;
+	bool m_has_environment;
+
 public:
-	Scene(int _width, int _height) : m_canvas(_width, _height) { }
+	Scene(int _width, int _height) : m_canvas(_width, _height) {
+		m_has_environment = false;
+	}
 
 	inline void addObject(Object *obj) {
 		m_obj.push_back(obj);
@@ -59,6 +64,10 @@ public:
 	void render_threaded(int pid, int iteration, struct PixelQueue *pixel_queue);
 
 	void render(bool multithread);
+
+	void loadEnvironment(char *path);
+
+	Color environmentColor(const Ray &ray) const;
 };
 
 

@@ -18,11 +18,11 @@ typedef Vec3 Point;
 typedef Vec3 Color;
 
 // Constants
-const int kIters = 100;
+const int kIters = 200;
 const int kThreads = 8;
-const int kSamplesPerIter = 50;
+const int kSamplesPerIter = 100;
 const double kEps = 1e-4;
-const int kMaxDepth = 8;
+const int kMaxDepth = 6;
 
 namespace kColor {
 	const Color Black(0, 0, 0);
