@@ -13,8 +13,8 @@
 
 class Material {
 	Color kEmissive;
-	Color kDiffuse, bDiffuse;    // diffuse_coef = kDiffuse .* color + bDiffuse
-	Color kSpecular, bSpecular;    // specular_coef = kSpecular .* color + bSpecular
+	double kDiffuse, bDiffuse;    // diffuse_coef = kDiffuse .* color + bDiffuse
+	double kSpecular, bSpecular;    // specular_coef = kSpecular .* color + bSpecular
 	double exp_phong;
 	Color kReflect;
 	Color kRefract;
@@ -48,21 +48,19 @@ public:
 		return *this;
 	}
 
-	inline Material &setDiffuse(const Color &diffuse, const Color &diffuse_bias) {
+	inline Material &setDiffuse(const double &diffuse,
+								const double &diffuse_bias) {
 		kDiffuse = diffuse;
 		bDiffuse = diffuse_bias;
-		kD = std::max(std::max(kDiffuse.val[0], kDiffuse.val[1]),
-					  kDiffuse.val[2]);
 		return *this;
 	}
 
-	inline Material &setSpecular(const Color &specular, const Color &specular_bias,
-							const double &exponent) {
+	inline Material &setSpecular(const double &specular,
+								 const double &specular_bias,
+								 const double &exponent) {
 		kSpecular = specular;
 		bSpecular = specular_bias;
 		exp_phong = exponent;
-		kS = std::max(std::max(kSpecular.val[0], kSpecular.val[1]),
-					  kSpecular.val[2]);
 		return *this;
 	}
 
@@ -72,7 +70,7 @@ public:
 	}
 
 	inline Material &setRefract(const Color &reflect, const Color &refract,
-						   const double &ior) {
+								const double &ior) {
 		kReflect = reflect;
 		kRefract = refract;
 		kIor = ior;
@@ -80,7 +78,7 @@ public:
 	}
 
 	inline const bool passesLight() const {
-		return length2(kRefract) > 0;
+		return max(kRefract) > 0;
 	}
 
 	inline Color colorAt(const Ray &ray,
@@ -96,7 +94,7 @@ public:
 };
 
 
-inline Material *DiffuseMaterial(const Color &linear, const Color &bias) {
+inline Material *DiffuseMaterial(const double &linear, const double &bias) {
 	Material *ret = new Material();
 	ret->setDiffuse(linear, bias);
 	return ret;
@@ -115,8 +113,10 @@ inline Material *DielectricMaterial(const Color &reflect, const Color &refract,
 	return ret;
 }
 
-inline Material *MetallicMaterial(const Color &diffuse, const Color &diffuse_bias,
-								  const Color &specular, const Color &specular_bias,
+inline Material *MetallicMaterial(const double &diffuse,
+								  const double &diffuse_bias,
+								  const double &specular,
+								  const double &specular_bias,
 								  const double &exponent) {
 	Material *ret = DiffuseMaterial(diffuse, diffuse_bias);
 	ret->setSpecular(specular, specular_bias, exponent);

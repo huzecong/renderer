@@ -27,9 +27,15 @@ class Scene {
 	Mat m_environment;
 	bool m_has_environment;
 
+	Plane m_focus_plane;
+	double m_aperture;
+	bool m_has_focus;
+
 public:
-	Scene(int _width, int _height) : m_canvas(_width, _height) {
+	Scene(int _width, int _height) : m_canvas(_width, _height)
+			,m_focus_plane(Vec3(),Vec3(),Vec3(),nullptr) {
 		m_has_environment = false;
+		m_has_focus = false;
 	}
 
 	inline void addObject(Object *obj) {
@@ -57,6 +63,12 @@ public:
 		m_camera = camera;
 		m_lookat = lookat;
 		m_field_length = field_length;
+	}
+
+	inline void setFocus(const Plane &focus_plane, const double &aperture) {
+		m_focus_plane = focus_plane;
+		m_aperture = aperture;
+		m_has_focus = true;
 	}
 
 	Color trace(const Ray &ray, int depth) const;

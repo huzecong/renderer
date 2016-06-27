@@ -32,7 +32,7 @@ Color Material::indirectDiffuse(const Ray &ray,
 	Ray next_ray(hit_point, next_dir);
 	next_ray.dist = ray.dist + hit_data.dist;
 	Color color = scene.trace(next_ray, depth + 1);
-	return (kDiffuse.mul(colorAt(ray, hit_data)) + bDiffuse).mul(color);
+	return (kDiffuse * colorAt(ray, hit_data) + One * bDiffuse).mul(color);
 }
 
 Color Material::indirectSpecular(const Ray &ray,
@@ -45,7 +45,7 @@ Color Material::indirectSpecular(const Ray &ray,
 	Ray next_ray(hit_point, next_dir);
 	next_ray.dist = ray.dist + hit_data.dist;
 	Color color = scene.trace(next_ray, depth + 1);
-	return (kSpecular.mul(colorAt(ray, hit_data)) + bSpecular).mul(color);
+	return (kSpecular * colorAt(ray, hit_data) + One * bSpecular).mul(color);
 }
 
 Color Material::directIllumination(const Ray &ray,
@@ -68,15 +68,15 @@ Color Material::directIllumination(const Ray &ray,
 			// Diffuse color
 			const Vec3 &N = hit_data.surface_normal;
 			const Vec3 &L = shadow_ray.v;
-			Color diffuse_coef = (kDiffuse.mul(colorAt(ray, hit_data)) +
-								  bDiffuse);
+			Color diffuse_coef = kDiffuse * colorAt(ray, hit_data) +
+								 bDiffuse * One;
 			color += diffuse_coef.mul(
 					max((Vec3::value_type)0.0, N.dot(L)) * light_col);
 
 			// Specular color (using Blinn-Phong model)
 			Vec3 H = cv::normalize(shadow_ray.v - ray.v);
-			Color specular_coef = (kSpecular.mul(colorAt(ray, hit_data)) +
-								   bSpecular);
+			Color specular_coef = kSpecular * colorAt(ray, hit_data) +
+								  bSpecular * One;
 			color += specular_coef.mul(
 					pow(max((Vec3::value_type)0.0, N.dot(H)), exp_phong) *
 					light_col);
@@ -97,8 +97,7 @@ Color Material::mirrorReflection(const Ray &ray, const IntersectData &hit_data,
 
 Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
 							   int depth, const Scene &scene) const {
-	if (kEmissive != Zero) return kEmissive.mul(colorAt(ray, hit_data));
-
+	if (kEmissive != Zero) return kEmissive;
 
 	Vec3 refract_ray;
 	double schlick;
@@ -115,6 +114,9 @@ Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
 	}
 
 	Color color;
+	Color obj_color = colorAt(ray, hit_data);
+	double kD = max(kDiffuse * obj_color) + bDiffuse;
+	double kS = max(kSpecular * obj_color) + bSpecular;
 	double sum = kD + kS + kR;
 	double prob = Random::uniform_01() * sum;
 	if (prob <= kD) {

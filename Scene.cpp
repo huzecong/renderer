@@ -34,11 +34,11 @@ struct PixelQueue {
 mutex cerr_mutex;
 
 void Scene::render_threaded(int pid, int iteration, PixelQueue *pixel_queue) {
-	{
-		lock_guard<mutex> lock(cerr_mutex);
-		cerr << "Starting iteration " << iteration << " of thread " << pid <<
-		endl;
-	}
+//	{
+//		lock_guard<mutex> lock(cerr_mutex);
+//		cerr << "Starting iteration " << iteration << " of thread " << pid <<
+//		endl;
+//	}
 	while (true) {
 		int i, j;
 		tie(i, j) = pixel_queue->next();
@@ -55,6 +55,16 @@ void Scene::render_threaded(int pid, int iteration, PixelQueue *pixel_queue) {
 						+ Random::uniform_pm1() * m_viewport_unit / 2;
 			Vec3 target = m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 			Ray ray(target, target - m_camera);
+			if (m_has_focus) {
+				IntersectData focus_data;
+				m_focus_plane.intersect(ray, focus_data);
+				Point focus_point = ray.o + ray.v * focus_data.dist;
+				double theta = Random::uniform_01() * 2 * M_PI;
+				Point lens_point = ray.o + (m_viewport_x * cos(theta) +
+											m_viewport_y * sin(theta)) *
+										   m_aperture;
+				ray = Ray(lens_point, focus_point - lens_point);
+			}
 			col += trace(ray, 0);
 		}
 		col /= kSamplesPerIter;
@@ -81,7 +91,9 @@ void Scene::render(bool multithread) {
 	cerr << fixed << setprecision(3);
 
 	if (multithread) {
+		cerr << "Using " << kThreads << " threads for rendering" << endl;
 		for (int iter = 0; iter < kIters; ++iter) {
+			cerr << "Starting iteration " << iter << "..." << endl;
 			pixel_queue.init(m_canvas.height(), m_canvas.width());
 
 			thread *threads[kThreads - 1];
@@ -95,9 +107,7 @@ void Scene::render(bool multithread) {
 				threads[i]->join();
 
 			char path[100];
-			sprintf(path,
-					"/Users/kanari/CLionProjects/renderer/output/iter%03d.png",
-					iter);
+			sprintf(path, "output/iter%03d.png", iter);
 			m_canvas.save(path);
 
 			cerr << "Finished iteration " << iter << ", image written to " <<
@@ -109,6 +119,7 @@ void Scene::render(bool multithread) {
 //			m_canvas.show();
 		}
 	} else {
+		cerr << "Using single-threaded rendering" << endl;
 		for (int i = 0; i < m_canvas.height(); ++i)
 			for (int j = 0; j < m_canvas.width(); ++j) {
 				double ver_bias =
@@ -249,7 +260,8 @@ void Scene::loadEnvironment(char *path) {
 		}
 		for (int x = 0; x < SizeX; ++x) {
 			int p = (SizeX - x - 1) * 3;
-			m_environment.at<cv::Vec3f>(y, x) = cv::Vec3f{data[p + 2], data[p + 1],
+			m_environment.at<cv::Vec3f>(y, x) = cv::Vec3f{data[p + 2],
+														  data[p + 1],
 														  data[p]};
 		}
 	}
