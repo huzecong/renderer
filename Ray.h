@@ -33,7 +33,7 @@ inline Vec3 reflect(const Vec3 &I, const Vec3 &N) {
 // Calculate refracted ray
 // Solve Fresnel's equation using Schlick's approximation
 inline bool refract(const Vec3 &I, const Vec3 &_N, const double &ior,
-					Vec3 &refract_ray, double &schlick) {
+                    Vec3 &refract_ray, double &schlick) {
 	assert(is_normalized(I));
 	assert(is_normalized(_N));
 	double cosI = I.dot(_N);

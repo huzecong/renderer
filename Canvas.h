@@ -54,6 +54,7 @@ public:
 		cv::imshow("Canvas", canvas);
 		cv::waitKey(0);
 	}
+
 /*
 	template <class Rep, class Period>
 	inline void show(std::chrono::duration<Rep, Period> duration) {

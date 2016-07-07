@@ -38,12 +38,12 @@ protected:
 	Point p;
 public:
 	AreaLight(const Point &_p, const Vec3 &x_axis, const Vec3 &y_axis,
-			  const Color &_color = kColor::White)
+	          const Color &_color = kColor::White)
 			: p(_p), axis{x_axis, y_axis}, Light(_color) { }
 
 	inline Point sample() {
 		return p + Random::uniform_01() * axis[0] +
-			   Random::uniform_01() * axis[1];
+		       Random::uniform_01() * axis[1];
 	}
 };
 

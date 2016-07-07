@@ -22,21 +22,21 @@ class Material {
 	double kS, kD;
 
 	Color mirrorReflection(const Ray &ray, const IntersectData &hit_data,
-						   int depth, const Scene &scene) const;
+	                       int depth, const Scene &scene) const;
 
 	// Direct lighting with Phong model
 	Color directIllumination(const Ray &ray,
-							 const IntersectData &hit_data,
-							 const Scene &scene) const;
+	                         const IntersectData &hit_data,
+	                         const Scene &scene) const;
 	// Importance sampling
 	Vec3 sampleUpperHemisphere(const Vec3 &normal,
-							   const double &exponent) const;
+	                           const double &exponent) const;
 	// Indirect lighting through diffuse
 	Color indirectDiffuse(const Ray &ray, const IntersectData &hit_data,
-						  int depth, const Scene &scene) const;
+	                      int depth, const Scene &scene) const;
 	// Indirect lighting through diffuse
 	Color indirectSpecular(const Ray &ray, const IntersectData &hit_data,
-						   int depth, const Scene &scene) const;
+	                       int depth, const Scene &scene) const;
 
 public:
 	Material() {
@@ -49,15 +49,15 @@ public:
 	}
 
 	inline Material &setDiffuse(const double &diffuse,
-								const double &diffuse_bias) {
+	                            const double &diffuse_bias) {
 		kDiffuse = diffuse;
 		bDiffuse = diffuse_bias;
 		return *this;
 	}
 
 	inline Material &setSpecular(const double &specular,
-								 const double &specular_bias,
-								 const double &exponent) {
+	                             const double &specular_bias,
+	                             const double &exponent) {
 		kSpecular = specular;
 		bSpecular = specular_bias;
 		exp_phong = exponent;
@@ -70,7 +70,7 @@ public:
 	}
 
 	inline Material &setRefract(const Color &reflect, const Color &refract,
-								const double &ior) {
+	                            const double &ior) {
 		kReflect = reflect;
 		kRefract = refract;
 		kIor = ior;
@@ -82,15 +82,15 @@ public:
 	}
 
 	inline Color colorAt(const Ray &ray,
-						 const IntersectData &hit_data) const {
+	                     const IntersectData &hit_data) const {
 		Point hit_point = ray.o + ray.v * hit_data.dist;
 		Color color = hit_data.hit_obj->colorAt(hit_point);
 		return color;
 	}
 
 	Color calculateColor(const Ray &ray,
-						 const IntersectData &hit_data,
-						 int depth, const Scene &scene) const;
+	                     const IntersectData &hit_data,
+	                     int depth, const Scene &scene) const;
 };
 
 
@@ -107,17 +107,17 @@ inline Material *MirrorMaterial(const Color &reflect) {
 }
 
 inline Material *DielectricMaterial(const Color &reflect, const Color &refract,
-									const double &ior) {
+                                    const double &ior) {
 	Material *ret = new Material();
 	ret->setRefract(reflect, refract, ior);
 	return ret;
 }
 
 inline Material *MetallicMaterial(const double &diffuse,
-								  const double &diffuse_bias,
-								  const double &specular,
-								  const double &specular_bias,
-								  const double &exponent) {
+                                  const double &diffuse_bias,
+                                  const double &specular,
+                                  const double &specular_bias,
+                                  const double &exponent) {
 	Material *ret = DiffuseMaterial(diffuse, diffuse_bias);
 	ret->setSpecular(specular, specular_bias, exponent);
 	return ret;

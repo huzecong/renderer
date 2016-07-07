@@ -7,11 +7,11 @@
 using namespace std;
 
 Vec3 Material::sampleUpperHemisphere(const Vec3 &normal,
-									 const double &exponent) const {
+                                     const double &exponent) const {
 	double r = Random::uniform_01();
 	double phi = Random::uniform_01() * 2 * M_PI;
 	double theta = exponent == 1 ? acos(sqrt(r)) :        // Uniform
-				   acos(pow(r, 1 / (exponent + 1)));    // Importance
+	               acos(pow(r, 1 / (exponent + 1)));    // Importance
 
 	double stheta = sin(theta);
 	double x_coef = stheta * cos(phi), y_coef = stheta * sin(phi);
@@ -25,8 +25,8 @@ Vec3 Material::sampleUpperHemisphere(const Vec3 &normal,
 }
 
 Color Material::indirectDiffuse(const Ray &ray,
-								const IntersectData &hit_data,
-								int depth, const Scene &scene) const {
+                                const IntersectData &hit_data,
+                                int depth, const Scene &scene) const {
 	Point hit_point = ray.o + ray.v * (hit_data.dist - kEps);
 	Vec3 next_dir = sampleUpperHemisphere(hit_data.surface_normal, 1);
 	Ray next_ray(hit_point, next_dir);
@@ -36,8 +36,8 @@ Color Material::indirectDiffuse(const Ray &ray,
 }
 
 Color Material::indirectSpecular(const Ray &ray,
-								 const IntersectData &hit_data, int depth,
-								 const Scene &scene) const {
+                                 const IntersectData &hit_data, int depth,
+                                 const Scene &scene) const {
 	Vec3 reflect_ray = reflect(ray.v, hit_data.surface_normal);
 	Vec3 next_dir = sampleUpperHemisphere(reflect_ray, exp_phong);
 	if (next_dir.dot(hit_data.surface_normal) < 0) return kColor::Black;
@@ -49,8 +49,8 @@ Color Material::indirectSpecular(const Ray &ray,
 }
 
 Color Material::directIllumination(const Ray &ray,
-								   const IntersectData &hit_data,
-								   const Scene &scene) const {
+                                   const IntersectData &hit_data,
+                                   const Scene &scene) const {
 	Color color;
 	double light_dist = ray.dist + hit_data.dist;
 	for (auto light : scene.lights()) {
@@ -64,19 +64,19 @@ Color Material::directIllumination(const Ray &ray,
 
 		IntersectData shadow_data;
 		if (!scene.castShadowRay(shadow_ray, &shadow_data) ||
-			sqr(shadow_data.dist) > shadow_ray_length2) {
+		    sqr(shadow_data.dist) > shadow_ray_length2) {
 			// Diffuse color
 			const Vec3 &N = hit_data.surface_normal;
 			const Vec3 &L = shadow_ray.v;
 			Color diffuse_coef = kDiffuse * colorAt(ray, hit_data) +
-								 bDiffuse * One;
+			                     bDiffuse * One;
 			color += diffuse_coef.mul(
 					max((Vec3::value_type)0.0, N.dot(L)) * light_col);
 
 			// Specular color (using Blinn-Phong model)
 			Vec3 H = cv::normalize(shadow_ray.v - ray.v);
 			Color specular_coef = kSpecular * colorAt(ray, hit_data) +
-								  bSpecular * One;
+			                      bSpecular * One;
 			color += specular_coef.mul(
 					pow(max((Vec3::value_type)0.0, N.dot(H)), exp_phong) *
 					light_col);
@@ -87,7 +87,7 @@ Color Material::directIllumination(const Ray &ray,
 
 
 Color Material::mirrorReflection(const Ray &ray, const IntersectData &hit_data,
-								 int depth, const Scene &scene) const {
+                                 int depth, const Scene &scene) const {
 	Point hit_point = ray.o + ray.v * (hit_data.dist - kEps);
 	Ray next_ray(hit_point, reflect(ray.v, hit_data.surface_normal));
 	next_ray.dist = ray.dist + hit_data.dist;
@@ -96,7 +96,7 @@ Color Material::mirrorReflection(const Ray &ray, const IntersectData &hit_data,
 }
 
 Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
-							   int depth, const Scene &scene) const {
+                               int depth, const Scene &scene) const {
 	if (kEmissive != Zero) return kEmissive;
 
 	Vec3 refract_ray;
@@ -106,7 +106,7 @@ Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
 	double kR = 0.0;
 	if (kReflect != Zero && kRefract != Zero) {
 		should_refract = refract(ray.v, hit_data.surface_normal, kIor,
-								 refract_ray, schlick);
+		                         refract_ray, schlick);
 		kR = max((1 - schlick) * kRefract + schlick * kReflect);
 	} else if (kReflect != Zero) {
 		should_refract = false;
@@ -147,4 +147,3 @@ Color Material::calculateColor(const Ray &ray, const IntersectData &hit_data,
 
 	return color;
 }
-

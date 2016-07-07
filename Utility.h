@@ -20,7 +20,9 @@ public:
 #else
 		static thread_local std::mt19937 *generator = nullptr;
 #endif
-		if (!generator) generator = new std::mt19937(clock() + std::hash<std::thread::id>()(std::this_thread::get_id()));
+		if (!generator)
+			generator = new std::mt19937(clock() + std::hash<std::thread::id>()(
+					std::this_thread::get_id()));
 		std::uniform_real_distribution<> dis(-1, 1);
 		return dis(*generator);
 	}
@@ -31,15 +33,17 @@ public:
 #else
 		static thread_local std::mt19937 *generator = nullptr;
 #endif
-		if (!generator) generator = new std::mt19937(clock() + std::hash<std::thread::id>()(std::this_thread::get_id()));
+		if (!generator)
+			generator = new std::mt19937(clock() + std::hash<std::thread::id>()(
+					std::this_thread::get_id()));
 		std::uniform_real_distribution<> dis(0, 1);
 		return dis(*generator);
 	}
 
 	static inline Vec3 vector() {
 		return Vec3{(float)Random::uniform_01(),
-					(float)Random::uniform_01(),
-					(float)Random::uniform_01()};
+		            (float)Random::uniform_01(),
+		            (float)Random::uniform_01()};
 	}
 };
 

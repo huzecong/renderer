@@ -50,9 +50,9 @@ void Scene::render_threaded(int pid, int iteration, PixelQueue *pixel_queue) {
 
 		for (int k = 0; k < kSamplesPerIter; ++k) {
 			double vb = ver_bias
-						+ Random::uniform_pm1() * m_viewport_unit / 2;
+			            + Random::uniform_pm1() * m_viewport_unit / 2;
 			double hb = hor_bias
-						+ Random::uniform_pm1() * m_viewport_unit / 2;
+			            + Random::uniform_pm1() * m_viewport_unit / 2;
 			Vec3 target = m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 			Ray ray(target, target - m_camera);
 			if (m_has_focus) {
@@ -61,8 +61,8 @@ void Scene::render_threaded(int pid, int iteration, PixelQueue *pixel_queue) {
 				Point focus_point = ray.o + ray.v * focus_data.dist;
 				double theta = Random::uniform_01() * 2 * M_PI;
 				Point lens_point = ray.o + (m_viewport_x * cos(theta) +
-											m_viewport_y * sin(theta)) *
-										   m_aperture;
+				                            m_viewport_y * sin(theta)) *
+				                           m_aperture;
 				ray = Ray(lens_point, focus_point - lens_point);
 			}
 			col += trace(ray, 0);
@@ -99,7 +99,7 @@ void Scene::render(bool multithread) {
 			thread *threads[kThreads - 1];
 			for (int i = 0; i < kThreads - 1; ++i)
 				threads[i] = new thread(&Scene::render_threaded,
-										this, i + 1, iter, &pixel_queue);
+				                        this, i + 1, iter, &pixel_queue);
 
 			render_threaded(0, iter, &pixel_queue);
 
@@ -130,9 +130,9 @@ void Scene::render(bool multithread) {
 
 				for (int k = 0; k < kSamplesPerIter; ++k) {
 					double vb = ver_bias
-								+ Random::uniform_pm1() * m_viewport_unit / 2;
+					            + Random::uniform_pm1() * m_viewport_unit / 2;
 					double hb = hor_bias
-								+ Random::uniform_pm1() * m_viewport_unit / 2;
+					            + Random::uniform_pm1() * m_viewport_unit / 2;
 					Vec3 target =
 							m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 					Ray ray(target, target - m_camera);
@@ -164,7 +164,7 @@ bool Scene::castShadowRay(const Ray &ray, IntersectData *data) const {
 		IntersectData current;
 		bool found = obj->intersect(ray, current);
 		if (found && !current.hit_obj->material()->passesLight() &&
-			current.dist < best.dist)
+		    current.dist < best.dist)
 			best = current;
 	}
 	if (best.dist == LLONG_MAX) return false;
@@ -196,7 +196,7 @@ Color Scene::environmentColor(const Ray &ray) const {
 
 	Vec3 dir = cv::normalize(ray.v);
 	double r = 0.159154943 * acos(dir.val[2]) /
-			   sqrt(sqr(dir.val[0]) + sqr(dir.val[1]));
+	           sqrt(sqr(dir.val[0]) + sqr(dir.val[1]));
 	double u = 0.5 + dir.val[0] * r;
 	double v = 0.5 + dir.val[1] * r;
 
@@ -247,8 +247,8 @@ void Scene::loadEnvironment(char *path) {
 		for (int x = 0; x < SizeX; ++x) {
 			int p = (SizeX - x - 1) * 3;
 			m_environment.at<cv::Vec3f>(y, x) = cv::Vec3f{data[p + 2],
-														  data[p + 1],
-														  data[p]};
+			                                              data[p + 1],
+			                                              data[p]};
 		}
 	}
 

@@ -32,8 +32,9 @@ class Scene {
 	bool m_has_focus;
 
 public:
-	Scene(int _width, int _height) : m_canvas(_width, _height)
-			,m_focus_plane(Vec3(),Vec3(),Vec3(),nullptr) {
+	Scene(int _width, int _height)
+			: m_canvas(_width, _height),
+			  m_focus_plane(Vec3(), Vec3(), Vec3(), nullptr) {
 		m_has_environment = false;
 		m_has_focus = false;
 	}
@@ -59,7 +60,7 @@ public:
 	bool findIntersection(const Ray &ray, IntersectData *data) const;
 
 	inline void setView(const Point &camera, const Point &lookat,
-						const double &field_length) {
+	                    const double &field_length) {
 		m_camera = camera;
 		m_lookat = lookat;
 		m_field_length = field_length;
@@ -73,7 +74,8 @@ public:
 
 	Color trace(const Ray &ray, int depth) const;
 
-	void render_threaded(int pid, int iteration, struct PixelQueue *pixel_queue);
+	void render_threaded(int pid, int iteration,
+	                     struct PixelQueue *pixel_queue);
 
 	void render(bool multithread);
 
