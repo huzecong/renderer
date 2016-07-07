@@ -129,10 +129,10 @@ void Scene::render(bool multithread) {
 				Color col;
 
 				for (int k = 0; k < kSamplesPerIter; ++k) {
-					double vb = ver_bias;
-//								+ Random::uniform_pm1() * m_viewport_unit / 2;
-					double hb = hor_bias;
-//								+ Random::uniform_pm1() * m_viewport_unit / 2;
+					double vb = ver_bias
+								+ Random::uniform_pm1() * m_viewport_unit / 2;
+					double hb = hor_bias
+								+ Random::uniform_pm1() * m_viewport_unit / 2;
 					Vec3 target =
 							m_lookat + vb * m_viewport_y + hb * m_viewport_x;
 					Ray ray(target, target - m_camera);
@@ -194,21 +194,7 @@ bool Scene::findIntersection(const Ray &ray, IntersectData *data) const {
 Color Scene::environmentColor(const Ray &ray) const {
 	if (!m_has_environment) return kBackgroundColor;
 
-	static Vec3 normal = {0.001, 0.001, 0.001};
-	static Vec3 aux = Random::vector();
-	static Vec3 x_axis = normal.cross(aux);
-	static Vec3 y_axis = normal.cross(x_axis);
-	static cv::Matx<float, 3, 3> rot{
-			x_axis.val[0], y_axis.val[0], normal.val[0],
-			x_axis.val[1], y_axis.val[1], normal.val[1],
-			x_axis.val[2], y_axis.val[2], normal.val[2]
-	};
-
-//	Vec3 dir = rot * ray.v;
-	Vec3 dir = ray.v;
-
-	while (sqr(dir.val[0]) + sqr(dir.val[1]) < kEps)
-		dir = cv::normalize(rot * ray.v);
+	Vec3 dir = cv::normalize(ray.v);
 	double r = 0.159154943 * acos(dir.val[2]) /
 			   sqrt(sqr(dir.val[0]) + sqr(dir.val[1]));
 	double u = 0.5 + dir.val[0] * r;

@@ -11,7 +11,7 @@ int main() {
 
 	Scene scene(1000, 1000);
 
-#include "scenes/metallic.h"
+#include "scenes/environment_lighting.h"
 
 #ifdef NDEBUG
 	scene.render(true);
